@@ -19,7 +19,7 @@ namespace Fusee.Tutorial.Core
         private SceneContainer _scene;
         private SceneRenderer _sceneRenderer;
         private float _camAngle = 0;
-        private const int _count = 5;
+        private const int _count = 9; //amount of cubes
         private TransformComponent[] _cubeTransform = new TransformComponent[_count];
         private ShaderEffectComponent[] _cubeShader = new ShaderEffectComponent[_count];
 
@@ -29,7 +29,9 @@ namespace Fusee.Tutorial.Core
             // Set the clear color for the backbuffer to light green (intensities in R, G, B, A).
             RC.ClearColor = new float4(0.1f, 0.1f, 0.1f, 1);
 
-            Mesh cubeMesh = SimpleMeshes.CreateCuboid(new float3(5, 5, 5));
+            float cubeSpace = (float)1 / _count * 50; //cube width with space between
+            float cubeSize = cubeSpace * 0.75f; //cube width
+            Mesh cubeMesh = SimpleMeshes.CreateCuboid(new float3(cubeSize, cubeSize, cubeSize)); //cube mesh
 
             // Create the scene containing the cube as the only object
             _scene = new SceneContainer();
@@ -37,18 +39,21 @@ namespace Fusee.Tutorial.Core
 
             // Create a scene with a cube
             // The three components: one XForm, one Shader and the Mesh
+            float center = -(cubeSpace * _count) / 2 + cubeSpace / 2; //leftmost x-value to display cubes in center
+            Diagnostics.Log("center " + center);
             for (int i = 0; i < _count; i++)
             {
-                _cubeTransform[i] = new TransformComponent
+                _cubeTransform[i] = new TransformComponent //Transformation
                 {
                     Scale = new float3(1, 1, 1),
-                    Translation = new float3(-12 + (i * 6), 0, 0),
+                    Translation = new float3(center + i * cubeSpace, 0, 0),
                     Rotation = new float3(0, 0, 0)
                 };
+                Diagnostics.Log(i + " " + _cubeTransform[i].Translation.x);
 
-                float color = (float)(i + 1) / _count;
+                float color = (float)(i + 1) / _count; //color of cubes, gray levels between ]black,white]
 
-                _cubeShader[i] = new ShaderEffectComponent
+                _cubeShader[i] = new ShaderEffectComponent //Shader
                 {
                     Effect = SimpleMeshes.MakeShaderEffect(new float3(color, color, color), new float3(1, 1, 1), 4)
                 };
@@ -79,9 +84,9 @@ namespace Fusee.Tutorial.Core
             for (int i = 0; i < _count; i++)
             {
                 int rotationDirection = -1;
-                if (i % 2 == 0) rotationDirection = 1; //If index is even then rotation direction is positive, if it's odd then direction is negative
-                float amplitude = 6 * M.Sin((float)i / (_count - 1) * M.Pi);
-                float scale = (float)1 / 6 * M.Max(_cubeTransform[i].Translation.y, -1 * _cubeTransform[i].Translation.y) + 1; //substitute for M.Abs (which doesn't seem to exist)
+                if (i % 2 == 0) rotationDirection = 1; //if index is even then rotation direction is positive, if it's odd then direction is negative
+                float amplitude = 10 * M.Sin((float)i / (_count - 1) * 2 * M.Pi); //makes line of cubes swing as sine
+                float scale = (float)1 / 20 * M.Max(_cubeTransform[i].Translation.y, -1 * _cubeTransform[i].Translation.y) + 1; //substitute for M.Abs (which doesn't seem to exist)
 
                 _cubeTransform[i].Scale.y = scale;
                 _cubeTransform[i].Scale.z = scale;
