@@ -19,17 +19,109 @@ namespace Fusee.Tutorial.Core
         private SceneContainer _scene;
         private SceneRenderer _sceneRenderer;
         private float _camAngle = 0;
+        private float _camVelocity = 0;
         private TransformComponent _baseTransform;
+        private TransformComponent _bodyTransform;
+        private TransformComponent _upperArmJointTransform;
+        private TransformComponent _upperArmTransform;
+        private TransformComponent _foreArmJointTransform;
+        private TransformComponent _foreArmTransform;
+        private TransformComponent _prehensileRailTransform;
+        private TransformComponent _prehensileClawLeftTransform;
+        private TransformComponent _prehensileClawRightTransform;
+        private float _clawsState = 0;
+        private float _clawsVelocity = -1;
+        private bool _isDown = false;
 
         SceneContainer CreateScene()
         {
-            // Initialize transform components that need to be changed inside "RenderAFrame"
+            // Initialize Transform Components that need to be changed inside "RenderAFrame"
             _baseTransform = new TransformComponent
             {
                 Rotation = new float3(0, 0, 0),
                 Scale = new float3(1, 1, 1),
                 Translation = new float3(0, 0, 0)
             };
+            _bodyTransform = new TransformComponent
+            {
+                Rotation = new float3(0, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(0, 6, 0)
+            };
+            _upperArmJointTransform = new TransformComponent
+            {
+                Rotation = new float3(0, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(2, 4, 0)
+            };
+            _upperArmTransform = new TransformComponent
+            {
+                Rotation = new float3(0, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(0, 4, 0)
+            };
+            _foreArmJointTransform = new TransformComponent
+            {
+                Rotation = new float3(0, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(-2, 4, 0)
+            };
+            _foreArmTransform = new TransformComponent
+            {
+                Rotation = new float3(0, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(0, 4, 0)
+            };
+            _prehensileRailTransform = new TransformComponent
+            {
+                Rotation = new float3(0, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(0, 5.5f, 0)
+            };
+            _prehensileClawLeftTransform = new TransformComponent
+            {
+                Rotation = new float3(0, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(-2.5f, 3, 0)
+            };
+            _prehensileClawRightTransform = new TransformComponent
+            {
+                Rotation = new float3(0, 0, 0),
+                Scale = new float3(1, 1, 1),
+                Translation = new float3(2.5f, 3, 0)
+            };
+
+            // Shader Effect Components
+            var baseShader = new ShaderEffectComponent
+            {
+                Effect = SimpleMeshes.MakeShaderEffect(new float3(0.7f, 0.7f, 0.7f), new float3(0.7f, 0.7f, 0.7f), 5)
+            };
+            var bodyShader = new ShaderEffectComponent
+            {
+                Effect = SimpleMeshes.MakeShaderEffect(new float3(0.8f, 0.2f, 0.2f), new float3(0.7f, 0.7f, 0.7f), 5)
+            };
+            var upperArmShader = new ShaderEffectComponent
+            {
+                Effect = SimpleMeshes.MakeShaderEffect(new float3(0.2f, 0.8f, 0.2f), new float3(0.7f, 0.7f, 0.7f), 5)
+            };
+            var foreArmShader = new ShaderEffectComponent
+            {
+                Effect = SimpleMeshes.MakeShaderEffect(new float3(0.2f, 0.2f, 0.8f), new float3(0.7f, 0.7f, 0.7f), 5)
+            };
+            var prehensileRailShader = new ShaderEffectComponent
+            {
+                Effect = SimpleMeshes.MakeShaderEffect(new float3(0.8f, 0.8f, 0.8f), new float3(0.7f, 0.7f, 0.7f), 5)
+            };
+            var prehensileClawShader = new ShaderEffectComponent
+            {
+                Effect = SimpleMeshes.MakeShaderEffect(new float3(0.6f, 0.6f, 0.6f), new float3(0.7f, 0.7f, 0.7f), 5)
+            };
+
+            // Mesh components
+            var baseMesh = SimpleMeshes.CreateCuboid(new float3(10, 2, 10));
+            var armMesh = SimpleMeshes.CreateCuboid(new float3(2, 10, 2));
+            var railMesh = SimpleMeshes.CreateCuboid(new float3(6, 1, 2));
+            var clawMesh = SimpleMeshes.CreateCuboid(new float3(1, 5, 2));
 
             // Setup the scene graph
             return new SceneContainer
@@ -40,17 +132,98 @@ namespace Fusee.Tutorial.Core
                     {
                         Components = new List<SceneComponentContainer>
                         {
-                            // TRANSFROM COMPONENT
                             _baseTransform,
-
-                            // SHADER EFFECT COMPONENT
-                            new ShaderEffectComponent
+                            baseShader,
+                            baseMesh
+                        },
+                        Children = new List<SceneNodeContainer>
+                        {
+                            new SceneNodeContainer
                             {
-                                Effect = SimpleMeshes.MakeShaderEffect(new float3(0.7f, 0.7f, 0.7f), new float3(0.7f, 0.7f, 0.7f), 5)
-                            },
-
-                            // MESH COMPONENT
-                            SimpleMeshes.CreateCuboid(new float3(10, 2, 10))
+                                Components = new List<SceneComponentContainer>
+                                {
+                                    _bodyTransform,
+                                    bodyShader,
+                                    armMesh
+                                },
+                                Children = new List<SceneNodeContainer>
+                                {
+                                    new SceneNodeContainer
+                                    {
+                                        Components = new List<SceneComponentContainer>
+                                        {
+                                            _upperArmJointTransform
+                                        },
+                                        Children = new List<SceneNodeContainer>
+                                        {
+                                            new SceneNodeContainer
+                                            {
+                                                Components = new List<SceneComponentContainer>
+                                                {
+                                                    _upperArmTransform,
+                                                    upperArmShader,
+                                                    armMesh
+                                                },
+                                                Children = new List<SceneNodeContainer>
+                                                {
+                                                    new SceneNodeContainer
+                                                    {
+                                                        Components = new List<SceneComponentContainer>
+                                                        {
+                                                            _foreArmJointTransform
+                                                        },
+                                                        Children = new List<SceneNodeContainer>
+                                                        {
+                                                            new SceneNodeContainer
+                                                            {
+                                                                Components = new List<SceneComponentContainer>
+                                                                {
+                                                                    _foreArmTransform,
+                                                                    foreArmShader,
+                                                                    armMesh
+                                                                },
+                                                                Children = new List<SceneNodeContainer>
+                                                                {
+                                                                    new SceneNodeContainer
+                                                                    {
+                                                                        Components = new List<SceneComponentContainer>
+                                                                        {
+                                                                            _prehensileRailTransform,
+                                                                            prehensileRailShader,
+                                                                            railMesh
+                                                                        },
+                                                                        Children = new List<SceneNodeContainer>
+                                                                        {
+                                                                            new SceneNodeContainer
+                                                                            {
+                                                                                Components = new List<SceneComponentContainer>
+                                                                                {
+                                                                                    _prehensileClawLeftTransform,
+                                                                                    prehensileClawShader,
+                                                                                    clawMesh
+                                                                                }
+                                                                            },
+                                                                            new SceneNodeContainer
+                                                                            {
+                                                                                Components = new List<SceneComponentContainer>
+                                                                                {
+                                                                                    _prehensileClawRightTransform,
+                                                                                    prehensileClawShader,
+                                                                                    clawMesh
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -72,6 +245,65 @@ namespace Fusee.Tutorial.Core
         // RenderAFrame is called once a frame
         public override void RenderAFrame()
         {
+            // Keyboard Controls
+            float upperArmRot = _upperArmJointTransform.Rotation.x;
+            float foreArmRot = _foreArmJointTransform.Rotation.x;
+            float maxAngle = M.Pi / 2;
+
+            _bodyTransform.Rotation.y += DeltaTime * Keyboard.ADAxis;
+
+            if ((upperArmRot < maxAngle || Keyboard.WSAxis < 0) && (upperArmRot > -maxAngle || Keyboard.WSAxis > 0))
+            {
+                _upperArmJointTransform.Rotation.x += DeltaTime * Keyboard.WSAxis;
+            }
+            if ((foreArmRot < maxAngle || Keyboard.UpDownAxis < 0) && (foreArmRot > -maxAngle || Keyboard.UpDownAxis > 0))
+            {
+                _foreArmJointTransform.Rotation.x += DeltaTime * Keyboard.UpDownAxis;
+            }
+            
+            _prehensileRailTransform.Rotation.y += DeltaTime * Keyboard.LeftRightAxis;
+
+
+            // Mouse Controls
+            if (Mouse.LeftButton)
+            {
+                _camVelocity = DeltaTime * Mouse.Velocity.x * 0.005f;
+            }
+            else
+            {
+                _camVelocity -= DeltaTime * _camVelocity;
+            }
+
+            if (Keyboard.GetKey(KeyCodes.E))
+            {
+                if (!_isDown)
+                {
+                    _clawsVelocity *= -1;
+                    _isDown = true;
+                }
+            }
+
+            if (_isDown && Keyboard.IsKeyUp(KeyCodes.E))
+            {
+                _isDown = false;
+            }
+
+            _clawsState += DeltaTime * _clawsVelocity;
+
+            if (_clawsState < 0)
+            {
+                _clawsState = 0;
+            }
+            else if (_clawsState > 1)
+            {
+                _clawsState = 1;
+            }
+
+            _prehensileClawLeftTransform.Translation.x = _clawsState * (-2.0f) + 2.5f;
+            _prehensileClawRightTransform.Translation.x = _clawsState * 2.0f - 2.5f;
+
+            _camAngle += _camVelocity;
+
             // Clear the backbuffer
             RC.Clear(ClearFlags.Color | ClearFlags.Depth);
 
