@@ -38,7 +38,7 @@ namespace Fusee.Tutorial.Core
             // Initialize Transform Components that need to be changed inside "RenderAFrame"
             _baseTransform = new TransformComponent
             {
-                Rotation = new float3(0, 0, 0),
+                Rotation = new float3(0, M.Pi / 2, 0),
                 Scale = new float3(1, 1, 1),
                 Translation = new float3(0, 0, 0)
             };
@@ -50,7 +50,7 @@ namespace Fusee.Tutorial.Core
             };
             _upperArmJointTransform = new TransformComponent
             {
-                Rotation = new float3(0, 0, 0),
+                Rotation = new float3(M.Pi / 4, 0, 0),
                 Scale = new float3(1, 1, 1),
                 Translation = new float3(2, 4, 0)
             };
@@ -62,7 +62,7 @@ namespace Fusee.Tutorial.Core
             };
             _foreArmJointTransform = new TransformComponent
             {
-                Rotation = new float3(0, 0, 0),
+                Rotation = new float3(M.Pi / 4, 0, 0),
                 Scale = new float3(1, 1, 1),
                 Translation = new float3(-2, 4, 0)
             };
@@ -248,15 +248,15 @@ namespace Fusee.Tutorial.Core
             // Keyboard Controls
             float upperArmRot = _upperArmJointTransform.Rotation.x;
             float foreArmRot = _foreArmJointTransform.Rotation.x;
-            float maxAngle = M.Pi / 2;
+            float maxRotAngle = M.Pi / 2;
 
             _bodyTransform.Rotation.y += DeltaTime * Keyboard.ADAxis;
 
-            if ((upperArmRot < maxAngle || Keyboard.WSAxis < 0) && (upperArmRot > -maxAngle || Keyboard.WSAxis > 0))
+            if ((upperArmRot < maxRotAngle || Keyboard.WSAxis < 0) && (upperArmRot > -maxRotAngle || Keyboard.WSAxis > 0))
             {
                 _upperArmJointTransform.Rotation.x += DeltaTime * Keyboard.WSAxis;
             }
-            if ((foreArmRot < maxAngle || Keyboard.UpDownAxis < 0) && (foreArmRot > -maxAngle || Keyboard.UpDownAxis > 0))
+            if ((foreArmRot < maxRotAngle || Keyboard.UpDownAxis < 0) && (foreArmRot > -maxRotAngle || Keyboard.UpDownAxis > 0))
             {
                 _foreArmJointTransform.Rotation.x += DeltaTime * Keyboard.UpDownAxis;
             }
@@ -271,7 +271,7 @@ namespace Fusee.Tutorial.Core
             }
             else
             {
-                _camVelocity -= DeltaTime * _camVelocity;
+                _camVelocity -= DeltaTime * _camVelocity * 2.5f;
             }
 
             // Keyboard Controls
