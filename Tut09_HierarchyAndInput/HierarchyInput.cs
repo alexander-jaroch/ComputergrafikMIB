@@ -30,8 +30,8 @@ namespace Fusee.Tutorial.Core
         private TransformComponent _prehensileClawLeftTransform;
         private TransformComponent _prehensileClawRightTransform;
         private float _clawsState = 0;
-        private float _clawsVelocity = -1;
-        private bool _isDown = false;
+        private float _clawsVelocity = 0;
+        private bool _hasEndState = true;
 
         SceneContainer CreateScene()
         {
@@ -260,7 +260,7 @@ namespace Fusee.Tutorial.Core
             {
                 _foreArmJointTransform.Rotation.x += DeltaTime * Keyboard.UpDownAxis;
             }
-            
+
             _prehensileRailTransform.Rotation.y += DeltaTime * Keyboard.LeftRightAxis;
 
 
@@ -274,29 +274,30 @@ namespace Fusee.Tutorial.Core
                 _camVelocity -= DeltaTime * _camVelocity;
             }
 
+            // Keyboard Controls
             if (Keyboard.GetKey(KeyCodes.E))
             {
-                if (!_isDown)
+                if (_hasEndState)
                 {
-                    _clawsVelocity *= -1;
-                    _isDown = true;
+                    if (_clawsState == 0)
+                    {
+                        _clawsVelocity = 1;
+                    }
+                    else if (_clawsState == 1)
+                    {
+                        _clawsVelocity = -1;
+                    }
+                    _hasEndState = false;
                 }
-            }
-
-            if (_isDown && Keyboard.IsKeyUp(KeyCodes.E))
-            {
-                _isDown = false;
             }
 
             _clawsState += DeltaTime * _clawsVelocity;
 
-            if (_clawsState < 0)
+            if (_clawsState < 0 || _clawsState > 1)
             {
-                _clawsState = 0;
-            }
-            else if (_clawsState > 1)
-            {
-                _clawsState = 1;
+                _clawsState = M.Max(0, M.Min(1, _clawsState));
+                _clawsVelocity = 0;
+                _hasEndState = true;
             }
 
             _prehensileClawLeftTransform.Translation.x = _clawsState * (-2.0f) + 2.5f;
