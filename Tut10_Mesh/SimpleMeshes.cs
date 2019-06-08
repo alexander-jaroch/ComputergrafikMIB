@@ -185,36 +185,112 @@ namespace Fusee.Tutorial.Core
 
         public static Mesh CreateConeFrustum(float radiuslower, float radiusupper, float height, int segments)
         {
-            float3[] verts = new float3[segments + 1]; // one vertex per segment and one extra for the center point
-            float3[] norms = new float3[segments + 1]; // one normal at each vertex
-            ushort[] tris = new ushort[segments * 3]; // a triangle per segment. Each triangle is made of three indices
+            float3[] verts = new float3[4 * segments + 2]; // one vertex per segment and one extra for the center point
+            float3[] norms = new float3[4 * segments + 2]; // one normal at each vertex
+            ushort[] tris = new ushort[3 * segments * 4]; // a triangle per segment. Each triangle is made of three indices
 
             float delta = 2 * M.Pi / segments;
 
-            float radius = radiuslower; //möp
+            // indices for top and bottom center vertices and normals (last two positions in arrays)
+            int topCenterIndex = 4 * segments;
+            int botCenterIndex = 4 * segments + 1;
 
-            verts[segments] = float3.Zero;
-            norms[segments] = float3.UnitY;
-                        
-            verts[0] = new float3(radius, 0, 0);
-            norms[0] = float3.UnitY;
+            // first set of vertices and normals
+            // top center
+            verts[topCenterIndex] = new float3(0, 0.5f * height, 0);
+            norms[topCenterIndex] = new float3(0, 1, 0);
+
+            // top circle, normal up
+            verts[0] = new float3(radiusupper, 0.5f * height, 0);
+            norms[0] = new float3(0, 1, 0);
+
+            // top circle, normal right
+            verts[1] = new float3(radiusupper, 0.5f * height, 0);
+            norms[1] = new float3(1, 0, 0); // cos 0 = 1, sin 0 = 0
+
+            // bottom cirle, normal right
+            verts[2] = new float3(radiuslower, -0.5f * height, 0);
+            norms[2] = new float3(1, 0, 0); // cos 0 = 1, sin 0 = 0
+
+            // bottom circle, normal down
+            verts[3] = new float3(radiuslower, -0.5f * height, 0);
+            norms[3] = new float3(0, -1, 0);
+
+            // bottom center
+            verts[botCenterIndex] = new float3(0, -0.5f * height, 0);
+            norms[botCenterIndex] = new float3(0, -1, 0);
+
 
             for (int i = 1; i < segments; i++)
             {
-                verts[i] = new float3(radius * M.Cos(i * delta), 0, radius * M.Sin(i * delta));
-                norms[i] = float3.UnitY;
+                float xUnit = M.Cos(i * delta);
+                float zUnit = M.Sin(i * delta);
 
-                // Stitch the current segment (using the center, the current and the previous point)
-                tris[3*i - 1] = (ushort) segments; // center point
-                tris[3*i - 2] = (ushort) i;        // current segment point
-                tris[3*i - 3] = (ushort) (i-1);    // previous segment point
+                float xUpper = radiusupper * xUnit;
+                float zUpper = radiusupper * zUnit;
 
+                float xLower = radiuslower * xUnit;
+                float zLower = radiuslower * zUnit;
+
+                // current set verticles and normals with angle delta
+                // top circle, normal up
+                verts[4 * i] = new float3(xUpper, 0.5f * height, zUpper);
+                norms[4 * i] = new float3(0, 1, 0);
+
+                // top circle, normal delta
+                verts[4 * i + 1] = new float3(xUpper, 0.5f * height, zUpper);
+                norms[4 * i + 1] = new float3(xUnit, 0, zUnit);
+
+                // bottom circle, normal delta
+                verts[4 * i + 2] = new float3(xLower, -0.5f * height, zLower);
+                norms[4 * i + 2] = new float3(xUnit, 0, zUnit);
+
+                // bottom circle, normal down
+                verts[4 * i + 3] = new float3(xLower, -0.5f * height, zLower);
+                norms[4 * i + 3] = new float3(0, -1, 0);
+
+                // triangles of segments (cake pieces)
+                // top triangle
+                tris[12 * i - 1] = (ushort)topCenterIndex;
+                tris[12 * i - 2] = (ushort)(4 * i);
+                tris[12 * i - 3] = (ushort)(4 * i - 4);
+
+                // top side triangle
+                tris[12 * i - 4] = (ushort)(4 * i + 1);
+                tris[12 * i - 5] = (ushort)(4 * i + 2);
+                tris[12 * i - 6] = (ushort)(4 * i - 3);
+
+                // bottom side triangle
+                tris[12 * i - 7] = (ushort)(4 * i - 3);
+                tris[12 * i - 8] = (ushort)(4 * i + 2);
+                tris[12 * i - 9] = (ushort)(4 * i - 2);
+
+                // bottom triangle
+                tris[12 * i - 10] = (ushort)botCenterIndex;
+                tris[12 * i - 11] = (ushort)(4 * i + 3);
+                tris[12 * i - 12] = (ushort)(4 * i - 1);
             }
 
-            // Stitch the last segment
-            tris[3 * segments - 1] = (ushort)segments;          // center point
-            tris[3 * segments - 2] = (ushort)0;                 // wrap around
-            tris[3 * segments - 3] = (ushort)(segments - 1);    // last segment point
+            // triangles of last segment
+            // top triangle
+            tris[12 * segments - 1] = (ushort)topCenterIndex;
+            tris[12 * segments - 2] = (ushort)0;
+            tris[12 * segments - 3] = (ushort)(4 * segments - 4);
+
+            // top side triangle
+            tris[12 * segments - 4] = (ushort)1;
+            tris[12 * segments - 5] = (ushort)2;
+            tris[12 * segments - 6] = (ushort)(4 * segments - 3);
+
+            // bottom side triangle
+            tris[12 * segments - 7] = (ushort)(4 * segments - 3);
+            tris[12 * segments - 8] = (ushort)2;
+            tris[12 * segments - 9] = (ushort)(4 * segments - 2);
+
+            // bottom triangle
+            tris[12 * segments - 10] = (ushort)botCenterIndex;
+            tris[12 * segments - 11] = (ushort)3;
+            tris[12 * segments - 12] = (ushort)(4 * segments - 1);
 
             return new Mesh
             {
